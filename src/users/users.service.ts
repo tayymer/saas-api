@@ -4,6 +4,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  password: string;
 }
 
 @Injectable()
@@ -11,26 +12,38 @@ export class UsersService {
   private users: User[] = [];
   private nextId = 1;
 
-  findAll(): User[] {
-    return this.users;
+  findAll(): Omit<User, 'password'>[] {
+    return this.users.map(({ password, ...user }) => user);
   }
 
-  findOne(id: number): User {
+  findOne(id: number): Omit<User, 'password'> {
     const user = this.users.find((u) => u.id === id);
     if (!user) throw new NotFoundException(`User ${id} not found`);
-    return user;
+    const { password, ...rest } = user;
+    return rest;
   }
 
-  create(data: { name: string; email: string }): User {
-    const user = { id: this.nextId++, ...data };
+  findByEmail(email: string): User | undefined {
+    return this.users.find((u) => u.email === email);
+  }
+
+  create(data: { name: string; email: string; password?: string }): User {
+    const user: User = {
+      id: this.nextId++,
+      name: data.name,
+      email: data.email,
+      password: data.password || '',
+    };
     this.users.push(user);
     return user;
   }
 
-  update(id: number, data: { name: string; email: string }): User {
-    const user = this.findOne(id);
+  update(id: number, data: { name: string; email: string }): Omit<User, 'password'> {
+    const user = this.users.find((u) => u.id === id);
+    if (!user) throw new NotFoundException(`User ${id} not found`);
     Object.assign(user, data);
-    return user;
+    const { password, ...rest } = user;
+    return rest;
   }
 
   remove(id: number): { message: string } {

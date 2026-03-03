@@ -1,3 +1,5 @@
+import { UseGuards, Request } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import {
   Controller,
   Get,
@@ -12,7 +14,13 @@ import { CreateUserDto } from './create-user.dto';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me')
+  getMe(@Request() req) {
+    return req.user;
+  }
 
   @Get()
   findAll() {

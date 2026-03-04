@@ -1,55 +1,49 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-
-export interface User {
-  id: number;
-  name: string;
-  email: string;
-  password: string;
-}
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
-  private users: User[] = [];
-  private nextId = 1;
+  constructor(private prisma: PrismaService) {}
 
-  findAll(): Omit<User, 'password'>[] {
-    return this.users.map(({ password, ...user }) => user);
+  findAll() {
+    return this.prisma.user.findMany({
+      select: { id: true, name: true, email: true, role: true, createdAt: true },
+    });
   }
 
-  findOne(id: number): Omit<User, 'password'> {
-    const user = this.users.find((u) => u.id === id);
+  async findOne(id: number) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException(`User ${id} not found`);
     const { password, ...rest } = user;
     return rest;
   }
 
-  findByEmail(email: string): User | undefined {
-    return this.users.find((u) => u.email === email);
+  findByEmail(email: string) {
+    return this.prisma.user.findUnique({ where: { email } });
   }
 
-  create(data: { name: string; email: string; password?: string }): User {
-    const user: User = {
-      id: this.nextId++,
-      name: data.name,
-      email: data.email,
-      password: data.password || '',
-    };
-    this.users.push(user);
-    return user;
+  create(data: { name: string; email: string; password?: string }) {
+    return this.prisma.user.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        password: data.password || '',
+      },
+    });
   }
 
-  update(id: number, data: { name: string; email: string }): Omit<User, 'password'> {
-    const user = this.users.find((u) => u.id === id);
+  async update(id: number, data: { name: string; email: string }) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException(`User ${id} not found`);
-    Object.assign(user, data);
-    const { password, ...rest } = user;
+    const updated = await this.prisma.user.update({ where: { id }, data });
+    const { password, ...rest } = updated;
     return rest;
   }
 
-  remove(id: number): { message: string } {
-    const index = this.users.findIndex((u) => u.id === id);
-    if (index === -1) throw new NotFoundException(`User ${id} not found`);
-    this.users.splice(index, 1);
+  async remove(id: number) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException(`User ${id} not found`);
+    await this.prisma.user.delete({ where: { id } });
     return { message: `User ${id} deleted` };
   }
 }

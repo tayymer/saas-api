@@ -11,17 +11,17 @@ export class AuthService {
   ) {}
 
   async register(name: string, email: string, password: string) {
-    const existing = this.usersService.findByEmail(email);
+    const existing = await this.usersService.findByEmail(email);
     if (existing) throw new ConflictException('Bu email zaten kayıtlı');
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = this.usersService.create({ name, email, password: hashedPassword });
+    const user = await this.usersService.create({ name, email, password: hashedPassword });
 
     return { message: 'Kayıt başarılı', userId: user.id };
   }
 
   async login(email: string, password: string) {
-    const user = this.usersService.findByEmail(email);
+    const user = await this.usersService.findByEmail(email);
     if (!user) throw new UnauthorizedException('Email veya şifre hatalı');
 
     const isMatch = await bcrypt.compare(password, user.password);

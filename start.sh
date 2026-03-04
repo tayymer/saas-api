@@ -1,3 +1,7 @@
-COPY start.sh .
-RUN chmod +x start.sh
-CMD ["sh", "start.sh"]
+#!/bin/sh
+
+echo "Running migrations..."
+npx prisma migrate deploy
+
+echo "Starting server..."
+node dist/main.js

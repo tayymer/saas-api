@@ -19,7 +19,7 @@ export class UsersController {
   @UseGuards(AuthGuard('jwt'))
   @Get('me')
   async getMe(@Request() req) {
-    return this.usersService.findOne(req.user.userId);
+    return this.usersService.findOne(req.user.id);  // userId → id
   }
   
   @Get()

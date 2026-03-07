@@ -18,10 +18,10 @@ export class UsersController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get('me')
-  getMe(@Request() req) {
-    return req.user;
+  async getMe(@Request() req) {
+    return this.usersService.findOne(req.user.userId);
   }
-
+  
   @Get()
   findAll() {
     return this.usersService.findAll();

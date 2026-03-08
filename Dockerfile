@@ -15,6 +15,6 @@ RUN npm run build
 COPY start.sh .
 RUN chmod +x start.sh
 
-EXPOSE 8080
+EXPOSE 3000
 
 CMD ["sh", "start.sh"]

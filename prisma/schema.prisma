@@ -22,3 +22,27 @@ enum Role {
   USER
   ADMIN
 }
+
+enum Language {
+  ENGLISH
+  SPANISH
+}
+
+enum Tier {
+  A
+  B
+  C
+  MASTER
+}
+
+model Word {
+  id          Int      @id @default(autoincrement())
+  word        String
+  translation String
+  language    Language
+  tier        Tier
+  category    String
+  createdAt   DateTime @default(now())
+
+  @@unique([language, word])
+}

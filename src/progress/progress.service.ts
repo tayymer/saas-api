@@ -84,6 +84,12 @@ export class ProgressService {
       data: { xp: 0, step: newStep, level: newLevel },
     });
   }
+  async resetProgress(userId: number) {
+    return this.prisma.userProgress.update({
+      where: { userId },
+      data: { tier: 'A', level: 1, step: 1, xp: 0, totalXp: 0 },
+    });
+  }
 
   private getNextTier(currentTier: string, level: number): string | null {
     if (currentTier === 'A' && level >= TIER_UNLOCK_LEVEL.B) return 'B';

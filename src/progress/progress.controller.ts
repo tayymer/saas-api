@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Request, UseGuards } from '@nestjs/common';
 import { ProgressService } from './progress.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -9,16 +9,21 @@ export class ProgressController {
 
   @Get()
   getProgress(@Request() req: any) {
-    return this.progressService.getOrCreateProgress(req.user.id);
+    return this.progressService.getOrCreateProgress(req.user.userId);
   }
 
   @Post('xp')
   addXp(@Request() req: any, @Body() body: { streak: number }) {
-    return this.progressService.addXp(req.user.id, body.streak);
+    return this.progressService.addXp(req.user.userId, body.streak);
   }
 
   @Post('fail')
   handleFail(@Request() req: any) {
-    return this.progressService.handleRunFail(req.user.id);
+    return this.progressService.handleRunFail(req.user.userId);
+  }
+
+  @Delete('reset')
+  resetProgress(@Request() req: any) {
+    return this.progressService.resetProgress(req.user.userId);
   }
 }

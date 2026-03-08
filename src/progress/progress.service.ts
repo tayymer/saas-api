@@ -39,16 +39,14 @@ export class ProgressService {
       leveledUp = true;
 
       if (newStep < tierCfg.steps) {
-        // Aynı tier, sonraki level
         newStep++;
-        newLevel = newStep; // Level = step (1-5)
+        newLevel = newStep;
       } else {
-        // Tier geçişi — level sıfırlanır
         const nextTier = this.getNextTier(progress.tier);
         if (nextTier) {
           newTier = nextTier as any;
           newStep = 1;
-          newLevel = 1; // Yeni tier'da level 1'den başla
+          newLevel = 1;
         }
       }
     }
@@ -61,13 +59,14 @@ export class ProgressService {
         step: newStep,
         level: newLevel,
         tier: newTier,
+        failStreak: 0, // Başarılı oyun → failStreak sıfırla
       },
     });
 
-    return { 
-      progress: updated, 
-      earned, 
-      bonus, 
+    return {
+      progress: updated,
+      earned,
+      bonus,
       leveledUp,
       tierChanged: newTier !== progress.tier,
       oldTier: progress.tier,
@@ -77,20 +76,45 @@ export class ProgressService {
 
   async handleRunFail(userId: number) {
     const progress = await this.getOrCreateProgress(userId);
-    const newStep = Math.max(1, progress.step - 1);
-    const newLevel = Math.max(1, progress.level - 1);
 
-    return this.prisma.userProgress.update({
+    const newFailStreak = (progress.failStreak ?? 0) + 1;
+    let stepDown = false;
+    let newStep = progress.step;
+    let newLevel = progress.level;
+    let resetFailStreak = newFailStreak;
+
+    // 3 üst üste fail → adım 5'e geri düş
+    if (newFailStreak >= 3) {
+      resetFailStreak = 0;
+      if (progress.step < 5) {
+        stepDown = true;
+        newStep = 5;
+        newLevel = 5;
+      }
+    }
+
+    const updated = await this.prisma.userProgress.update({
       where: { userId },
-      data: { xp: 0, step: newStep, level: newLevel },
+      data: {
+        xp: 0,
+        step: newStep,
+        level: newLevel,
+        failStreak: resetFailStreak,
+      },
     });
+
+    return {
+      progress: updated,
+      stepDown,
+      failStreak: newFailStreak,
+    };
   }
 
   async resetProgress(userId: number) {
     return this.prisma.userProgress.upsert({
       where: { userId },
-      update: { tier: 'A', level: 1, step: 1, xp: 0, totalXp: 0 },
-      create: { userId, tier: 'A', level: 1, step: 1, xp: 0, totalXp: 0 },
+      update: { tier: 'A', level: 1, step: 1, xp: 0, totalXp: 0, failStreak: 0 },
+      create: { userId, tier: 'A', level: 1, step: 1, xp: 0, totalXp: 0, failStreak: 0 },
     });
   }
 

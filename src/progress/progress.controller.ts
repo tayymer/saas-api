@@ -23,7 +23,9 @@ export class ProgressController {
   }
 
   @Delete('reset')
-  resetProgress(@Request() req: any) {
+  async resetProgress(@Request() req: any) {
+    console.log('USER:', req.user);
     return this.progressService.resetProgress(req.user.userId);
   }
+  
 }

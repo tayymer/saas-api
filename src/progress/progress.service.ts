@@ -63,7 +63,15 @@ export class ProgressService {
       },
     });
 
-    return { progress: updated, earned, bonus, leveledUp };
+    return { 
+      progress: updated, 
+      earned, 
+      bonus, 
+      leveledUp,
+      tierChanged: newTier !== progress.tier,
+      oldTier: progress.tier,
+      newTier,
+    };
   }
 
   async handleRunFail(userId: number) {

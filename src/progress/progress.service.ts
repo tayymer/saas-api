@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { TIER_CONFIG, TIER_UNLOCK_LEVEL, XP_PER_CORRECT, XP_STREAK_BONUS, XP_STREAK_INTERVAL } from './game.constants';
+import { TIER_CONFIG, XP_PER_CORRECT, XP_STREAK_BONUS, XP_STREAK_INTERVAL } from './game.constants';
 
 @Injectable()
 export class ProgressService {
@@ -39,15 +39,16 @@ export class ProgressService {
       leveledUp = true;
 
       if (newStep < tierCfg.steps) {
+        // Aynı tier, sonraki level
         newStep++;
-        newLevel++;
+        newLevel = newStep; // Level = step (1-5)
       } else {
-        // Tier geçişi
-        const nextTier = this.getNextTier(progress.tier, newLevel);
+        // Tier geçişi — level sıfırlanır
+        const nextTier = this.getNextTier(progress.tier);
         if (nextTier) {
           newTier = nextTier as any;
           newStep = 1;
-          newLevel++;
+          newLevel = 1; // Yeni tier'da level 1'den başla
         }
       }
     }
@@ -84,6 +85,7 @@ export class ProgressService {
       data: { xp: 0, step: newStep, level: newLevel },
     });
   }
+
   async resetProgress(userId: number) {
     return this.prisma.userProgress.upsert({
       where: { userId },
@@ -91,10 +93,11 @@ export class ProgressService {
       create: { userId, tier: 'A', level: 1, step: 1, xp: 0, totalXp: 0 },
     });
   }
-  private getNextTier(currentTier: string, level: number): string | null {
-    if (currentTier === 'A' && level >= TIER_UNLOCK_LEVEL.B) return 'B';
-    if (currentTier === 'B' && level >= TIER_UNLOCK_LEVEL.C) return 'C';
-    if (currentTier === 'C' && level >= TIER_UNLOCK_LEVEL.MASTER) return 'MASTER';
+
+  private getNextTier(currentTier: string): string | null {
+    if (currentTier === 'A') return 'B';
+    if (currentTier === 'B') return 'C';
+    if (currentTier === 'C') return 'MASTER';
     return null;
   }
 }

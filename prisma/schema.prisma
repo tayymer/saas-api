@@ -9,13 +9,14 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           Int            @id @default(autoincrement())
+  name         String
+  email        String         @unique
+  password     String
+  role         Role           @default(USER)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  progress     UserProgress?
 }
 
 enum Role {
@@ -45,4 +46,17 @@ model Word {
   createdAt   DateTime @default(now())
 
   @@unique([language, word])
+}
+
+model UserProgress {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  user      User     @relation(fields: [userId], references: [id])
+  tier      Tier     @default(A)
+  level     Int      @default(1)
+  step      Int      @default(1)
+  xp        Int      @default(0)
+  totalXp   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

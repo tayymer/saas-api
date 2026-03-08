@@ -2,7 +2,7 @@ export const TIER_CONFIG = {
   A: {
     lives: 7,
     steps: 5,
-    xpThresholds: [30, 40, 50, 60, 70], // Test için düşük
+    xpThresholds: [30, 40, 50, 60, 70], // test
   },
   B: {
     lives: 5,
@@ -22,9 +22,9 @@ export const TIER_CONFIG = {
 };
 
 export const TIER_UNLOCK_LEVEL = {
-  B: 10,
-  C: 20,
-  MASTER: 30,
+  B: 5,
+  C: 10,
+  MASTER: 15,
 };
 
 export const XP_PER_CORRECT = 10;

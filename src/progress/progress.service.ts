@@ -81,14 +81,14 @@ export class ProgressService {
     let newLevel = progress.level;
     let newTier = progress.tier;
     let tierDown = false;
-    let newFailStreak = (progress.failStreak ?? 0);
+    let newFailStreak = Number(progress.failStreak ?? 0);
     let resetFailStreak = newFailStreak;
 
     if (progress.step > 1) {
-      // Normal: 1 adım geri düş
+      // Normal: 1 adım geri düş, level değişmez
       newStep = progress.step - 1;
-      newLevel = progress.step - 1;
-      resetFailStreak = 0; // adım değişti, streak sıfırla
+      // newLevel değişmez — level sadece addXp ile artar
+      resetFailStreak = 0;
     } else {
       // Adım 1'deyiz → failStreak artır
       resetFailStreak = newFailStreak + 1;
@@ -99,7 +99,7 @@ export class ProgressService {
         if (prevTier) {
           newTier = prevTier as any;
           newStep = 5;
-          newLevel = 5;
+          newLevel = progress.level; // level korunur
           tierDown = true;
           resetFailStreak = 0;
         }

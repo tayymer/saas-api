@@ -34,9 +34,12 @@ export class ProgressService {
     let xpAfter = newXp;
     let leveledUp = false;
 
+    let failStreakAfter = progress.failStreak ?? 0;
+
     if (threshold && newXp >= threshold) {
       xpAfter = 0;
       leveledUp = true;
+      failStreakAfter = 0; // adım atlandı → failStreak sıfırla
 
       if (newStep < tierCfg.steps) {
         newStep++;
@@ -59,7 +62,7 @@ export class ProgressService {
         step: newStep,
         level: newLevel,
         tier: newTier,
-        failStreak: 0, // Başarılı oyun → failStreak sıfırla
+        failStreak: failStreakAfter, // adım değiştiyse 0, değiştiyse korunur
       },
     });
 

@@ -77,19 +77,33 @@ export class ProgressService {
   async handleRunFail(userId: number) {
     const progress = await this.getOrCreateProgress(userId);
 
-    const newFailStreak = (progress.failStreak ?? 0) + 1;
-    let stepDown = false;
     let newStep = progress.step;
     let newLevel = progress.level;
+    let newTier = progress.tier;
+    let tierDown = false;
+    let newFailStreak = (progress.failStreak ?? 0);
     let resetFailStreak = newFailStreak;
 
-    // 3 üst üste fail → adım 5'e geri düş
-    if (newFailStreak >= 3) {
-      resetFailStreak = 0;
-      if (progress.step < 5) {
-        stepDown = true;
-        newStep = 5;
-        newLevel = 5;
+    if (progress.step > 1) {
+      // Normal: 1 adım geri düş
+      newStep = progress.step - 1;
+      newLevel = progress.step - 1;
+      resetFailStreak = 0; // adım değişti, streak sıfırla
+    } else {
+      // Adım 1'deyiz → failStreak artır
+      resetFailStreak = newFailStreak + 1;
+
+      // 3 kez adım 1'de fail → önceki aşamanın adım 5'ine düş
+      if (resetFailStreak >= 3) {
+        const prevTier = this.getPrevTier(progress.tier);
+        if (prevTier) {
+          newTier = prevTier as any;
+          newStep = 5;
+          newLevel = 5;
+          tierDown = true;
+          resetFailStreak = 0;
+        }
+        // A tier adım 1'deyse hiçbir şey değişmez
       }
     }
 
@@ -99,14 +113,16 @@ export class ProgressService {
         xp: 0,
         step: newStep,
         level: newLevel,
+        tier: newTier,
         failStreak: resetFailStreak,
       },
     });
 
     return {
       progress: updated,
-      stepDown,
-      failStreak: newFailStreak,
+      tierDown,
+      stepDown: newStep < progress.step || tierDown,
+      failStreak: resetFailStreak,
     };
   }
 
@@ -123,5 +139,12 @@ export class ProgressService {
     if (currentTier === 'B') return 'C';
     if (currentTier === 'C') return 'MASTER';
     return null;
+  }
+
+  private getPrevTier(currentTier: string): string | null {
+    if (currentTier === 'B') return 'A';
+    if (currentTier === 'C') return 'B';
+    if (currentTier === 'MASTER') return 'C';
+    return null; // A tier'da önceki yok
   }
 }

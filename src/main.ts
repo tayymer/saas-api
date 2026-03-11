@@ -8,9 +8,11 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000',
-      'https://saas-dashboard-b60g1fi9w-tamers-projects-a0a7a0f6.vercel.app'
+      'https://saas-dashboard-b60g1fi9w-tamers-projects-a0a7a0f6.vercel.app',
+      'https://saas-dashboard-git-main-tamers-projects-a0a7a0f6.vercel.app',
+      /\.vercel\.app$/,
     ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true,
   });
   

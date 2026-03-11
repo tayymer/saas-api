@@ -9,7 +9,8 @@ export class WordsController {
   getWords(
     @Query('language') language: string = 'ENGLISH',
     @Query('tier') tier: string = 'A',
+    @Query('cefr_level') cefrLevel?: string,
   ) {
-    return this.wordsService.getWords(language, tier);
+    return this.wordsService.getWords(language, tier, cefrLevel);
   }
 }

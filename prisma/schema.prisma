@@ -43,6 +43,7 @@ model Word {
   language    Language
   tier        Tier
   category    String
+  cefrLevel   String   @default("A1")
   createdAt   DateTime @default(now())
 
   @@unique([language, word])

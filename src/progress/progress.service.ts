@@ -126,6 +126,34 @@ export class ProgressService {
     };
   }
 
+  async continueWithStars(
+    userId: number,
+    language: Language = 'ENGLISH',
+    restoreTier: string,
+    restoreStep: number,
+    cost: number = 120,
+  ) {
+    const progress = await this.getOrCreateProgress(userId, language);
+
+    if (progress.totalXp < cost) {
+      return { success: false, reason: 'insufficient_stars', totalXp: progress.totalXp };
+    }
+
+    const updated = await this.prisma.userProgress.update({
+      where: { userId_language: { userId, language } },
+      data: {
+        totalXp: progress.totalXp - cost,
+        tier: restoreTier as any,
+        step: restoreStep,
+        level: restoreStep,
+        xp: 0,
+        failStreak: 0,
+      },
+    });
+
+    return { success: true, progress: updated, deducted: cost };
+  }
+
   async resetProgress(userId: number, language: Language = 'ENGLISH') {
     return this.prisma.userProgress.upsert({
       where: { userId_language: { userId, language } },

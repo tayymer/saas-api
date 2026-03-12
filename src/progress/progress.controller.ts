@@ -24,6 +24,20 @@ export class ProgressController {
     return this.progressService.handleRunFail(req.user.userId, body?.language || 'ENGLISH');
   }
 
+  @Post('continue')
+  continueWithStars(
+    @Request() req: any,
+    @Body() body: { language?: Language; restoreTier: string; restoreStep: number; cost?: number },
+  ) {
+    return this.progressService.continueWithStars(
+      req.user.userId,
+      body.language || 'ENGLISH',
+      body.restoreTier,
+      body.restoreStep,
+      body.cost || 120,
+    );
+  }
+
   @Delete('reset')
   async resetProgress(@Request() req: any, @Query('language') language?: Language) {
     return this.progressService.resetProgress(req.user.userId, language || 'ENGLISH');

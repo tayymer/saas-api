@@ -16,7 +16,7 @@ model User {
   role         Role           @default(USER)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
-  progress     UserProgress?
+  progress     UserProgress[]
 }
 
 enum Role {
@@ -51,7 +51,8 @@ model Word {
 
 model UserProgress {
   id         Int      @id @default(autoincrement())
-  userId     Int      @unique
+  userId     Int
+  language   Language @default(ENGLISH)
   user       User     @relation(fields: [userId], references: [id])
   tier       Tier     @default(A)
   level      Int      @default(1)
@@ -61,4 +62,6 @@ model UserProgress {
   failStreak Int      @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@unique([userId, language])
 }

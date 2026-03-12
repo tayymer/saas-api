@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Delete, Body, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Query, Request, UseGuards } from '@nestjs/common';
 import { ProgressService } from './progress.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+
+type Language = 'ENGLISH' | 'SPANISH';
 
 @Controller('progress')
 @UseGuards(JwtAuthGuard)
@@ -8,24 +10,22 @@ export class ProgressController {
   constructor(private readonly progressService: ProgressService) {}
 
   @Get()
-  getProgress(@Request() req: any) {
-    return this.progressService.getOrCreateProgress(req.user.userId);
+  getProgress(@Request() req: any, @Query('language') language?: Language) {
+    return this.progressService.getOrCreateProgress(req.user.userId, language || 'ENGLISH');
   }
 
   @Post('xp')
-  addXp(@Request() req: any, @Body() body: { streak: number }) {
-    return this.progressService.addXp(req.user.userId, body.streak);
+  addXp(@Request() req: any, @Body() body: { streak: number; language?: Language }) {
+    return this.progressService.addXp(req.user.userId, body.streak, body.language || 'ENGLISH');
   }
 
   @Post('fail')
-  handleFail(@Request() req: any) {
-    return this.progressService.handleRunFail(req.user.userId);
+  handleFail(@Request() req: any, @Body() body: { language?: Language }) {
+    return this.progressService.handleRunFail(req.user.userId, body?.language || 'ENGLISH');
   }
 
   @Delete('reset')
-  async resetProgress(@Request() req: any) {
-    console.log('USER:', req.user);
-    return this.progressService.resetProgress(req.user.userId);
+  async resetProgress(@Request() req: any, @Query('language') language?: Language) {
+    return this.progressService.resetProgress(req.user.userId, language || 'ENGLISH');
   }
-  
 }

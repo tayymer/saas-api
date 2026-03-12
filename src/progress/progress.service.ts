@@ -2,24 +2,26 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TIER_CONFIG, XP_PER_CORRECT, XP_STREAK_BONUS, XP_STREAK_INTERVAL } from './game.constants';
 
+type Language = 'ENGLISH' | 'SPANISH';
+
 @Injectable()
 export class ProgressService {
   constructor(private prisma: PrismaService) {}
 
-  async getOrCreateProgress(userId: number) {
+  async getOrCreateProgress(userId: number, language: Language = 'ENGLISH') {
     let progress = await this.prisma.userProgress.findUnique({
-      where: { userId },
+      where: { userId_language: { userId, language } },
     });
     if (!progress) {
       progress = await this.prisma.userProgress.create({
-        data: { userId },
+        data: { userId, language },
       });
     }
     return progress;
   }
 
-  async addXp(userId: number, streak: number) {
-    const progress = await this.getOrCreateProgress(userId);
+  async addXp(userId: number, streak: number, language: Language = 'ENGLISH') {
+    const progress = await this.getOrCreateProgress(userId, language);
     const bonus = streak % XP_STREAK_INTERVAL === 0 ? XP_STREAK_BONUS : 0;
     const earned = XP_PER_CORRECT + bonus;
     const newXp = progress.xp + earned;
@@ -39,7 +41,7 @@ export class ProgressService {
     if (threshold && newXp >= threshold) {
       xpAfter = 0;
       leveledUp = true;
-      failStreakAfter = 0; // adım atlandı → failStreak sıfırla
+      failStreakAfter = 0;
 
       if (newStep < tierCfg.steps) {
         newStep++;
@@ -55,14 +57,14 @@ export class ProgressService {
     }
 
     const updated = await this.prisma.userProgress.update({
-      where: { userId },
+      where: { userId_language: { userId, language } },
       data: {
         xp: xpAfter,
         totalXp: newTotalXp,
         step: newStep,
         level: newLevel,
         tier: newTier,
-        failStreak: failStreakAfter, // adım değiştiyse 0, değiştiyse korunur
+        failStreak: failStreakAfter,
       },
     });
 
@@ -77,8 +79,8 @@ export class ProgressService {
     };
   }
 
-  async handleRunFail(userId: number) {
-    const progress = await this.getOrCreateProgress(userId);
+  async handleRunFail(userId: number, language: Language = 'ENGLISH') {
+    const progress = await this.getOrCreateProgress(userId, language);
 
     let newStep = progress.step;
     let newLevel = progress.level;
@@ -88,30 +90,25 @@ export class ProgressService {
     let resetFailStreak = newFailStreak;
 
     if (progress.step > 1) {
-      // Normal: 1 adım geri düş, level değişmez
       newStep = progress.step - 1;
-      // newLevel değişmez — level sadece addXp ile artar
       resetFailStreak = 0;
     } else {
-      // Adım 1'deyiz → failStreak artır
       resetFailStreak = newFailStreak + 1;
 
-      // 3 kez adım 1'de fail → önceki aşamanın adım 5'ine düş
       if (resetFailStreak >= 3) {
         const prevTier = this.getPrevTier(progress.tier);
         if (prevTier) {
           newTier = prevTier as any;
           newStep = 5;
-          newLevel = progress.level; // level korunur
+          newLevel = progress.level;
           tierDown = true;
           resetFailStreak = 0;
         }
-        // A tier adım 1'deyse hiçbir şey değişmez
       }
     }
 
     const updated = await this.prisma.userProgress.update({
-      where: { userId },
+      where: { userId_language: { userId, language } },
       data: {
         xp: 0,
         step: newStep,
@@ -129,11 +126,11 @@ export class ProgressService {
     };
   }
 
-  async resetProgress(userId: number) {
+  async resetProgress(userId: number, language: Language = 'ENGLISH') {
     return this.prisma.userProgress.upsert({
-      where: { userId },
+      where: { userId_language: { userId, language } },
       update: { tier: 'A', level: 1, step: 1, xp: 0, totalXp: 0, failStreak: 0 },
-      create: { userId, tier: 'A', level: 1, step: 1, xp: 0, totalXp: 0, failStreak: 0 },
+      create: { userId, language, tier: 'A', level: 1, step: 1, xp: 0, totalXp: 0, failStreak: 0 },
     });
   }
 
@@ -148,6 +145,6 @@ export class ProgressService {
     if (currentTier === 'B') return 'A';
     if (currentTier === 'C') return 'B';
     if (currentTier === 'MASTER') return 'C';
-    return null; // A tier'da önceki yok
+    return null;
   }
 }

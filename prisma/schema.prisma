@@ -37,16 +37,43 @@ enum Tier {
 }
 
 model Word {
-  id          Int      @id @default(autoincrement())
-  word        String
-  translation String
-  language    Language
-  tier        Tier
-  category    String
-  cefrLevel   String   @default("A1")
-  createdAt   DateTime @default(now())
+  id            Int        @id @default(autoincrement())
+  word          String
+  translation   String
+  language      Language
+  tier          Tier
+  category      String
+  cefrLevel     String     @default("A1")
+  frequencyRank Int        @default(999)
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+
+  seenBy        WordSeen[]
+  stats         WordStats?
 
   @@unique([language, word])
+  @@index([language, cefrLevel, isActive])
+}
+
+model WordSeen {
+  id      Int      @id @default(autoincrement())
+  wordId  Int
+  userId  Int
+  seenAt  DateTime @default(now())
+
+  word    Word     @relation(fields: [wordId], references: [id])
+
+  @@index([userId, seenAt])
+}
+
+model WordStats {
+  wordId          Int    @id
+  correctCount    Int    @default(0)
+  totalCount      Int    @default(0)
+  avgResponseTime Float  @default(0)
+  skipCount       Int    @default(0)
+
+  word            Word   @relation(fields: [wordId], references: [id])
 }
 
 model UserProgress {

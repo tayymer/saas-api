@@ -112,25 +112,16 @@ export class WordsService {
 
   // ── Record word answer stats ─────────────────────────────────────────────
   async recordWordAnswer(wordId: number, correct: boolean, responseTime: number) {
-    const existing = await this.prisma.wordStats.findUnique({ where: { wordId } });
-    if (!existing) {
-      await this.prisma.wordStats.create({
-        data: {
-          wordId,
-          correctCount:    correct ? 1 : 0,
-          totalCount:      1,
-          avgResponseTime: responseTime,
-        },
-      });
-    } else {
-      const newTotal   = existing.totalCount + 1;
-      const newCorrect = existing.correctCount + (correct ? 1 : 0);
-      const newAvg     = (existing.avgResponseTime * existing.totalCount + responseTime) / newTotal;
-      await this.prisma.wordStats.update({
-        where: { wordId },
-        data: { correctCount: newCorrect, totalCount: newTotal, avgResponseTime: newAvg },
-      });
-    }
+    const inc = correct ? 1 : 0;
+    await this.prisma.$executeRaw`
+      INSERT INTO "WordStats" ("wordId", "correctCount", "totalCount", "avgResponseTime")
+      VALUES (${wordId}, ${inc}, 1, ${responseTime})
+      ON CONFLICT ("wordId") DO UPDATE SET
+        "correctCount"    = "WordStats"."correctCount" + ${inc},
+        "totalCount"      = "WordStats"."totalCount" + 1,
+        "avgResponseTime" = ("WordStats"."avgResponseTime" * "WordStats"."totalCount" + ${responseTime})
+                            / ("WordStats"."totalCount" + 1)
+    `;
     return { ok: true };
   }
 

@@ -150,12 +150,12 @@ export class LegendService {
       });
     }
 
-    // Can mantığı — kötü seri (streak < 5) can kırar
+    // Can mantığı — her başarısız run 1 can kırar (usedContinue ise kırmaz)
     let shieldDrained = false;
     let ppLost        = 0;
     let demoted       = false;
 
-    if (streak < 5) {
+    if (!usedContinue) {
       const freshProfile = await this.prisma.legendProfile.findUnique({
         where: { userId_language: { userId, language } },
       });
@@ -163,8 +163,8 @@ export class LegendService {
 
       if (currentShields > 0) {
         const newShields = currentShields - 1;
-        // Son canı da harcadı → demoted, canları sıfırla (3'e)
         if (newShields === 0) {
+          // Son can → demote, canları sıfırla
           await this.prisma.legendProfile.update({
             where: { userId_language: { userId, language } },
             data:  { shields: 3 },

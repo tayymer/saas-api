@@ -1,12 +1,13 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-// Tier → CEFR level mapping with ratios
+// All tiers see all CEFR levels equally
+const ALL_CEFR = ['A1', 'A2', 'B1', 'B2', 'C1'];
 const TIER_CEFR_CONFIG: Record<string, { levels: string[]; ratios: number[] }> = {
-  A:      { levels: ['A1', 'A2'],     ratios: [0.70, 0.30] },
-  B:      { levels: ['A2', 'B1'],     ratios: [0.50, 0.50] },
-  C:      { levels: ['B1', 'B2'],     ratios: [0.40, 0.60] },
-  MASTER: { levels: ['B2', 'C1'],     ratios: [0.40, 0.60] },
+  A:      { levels: ALL_CEFR, ratios: [0.20, 0.20, 0.20, 0.20, 0.20] },
+  B:      { levels: ALL_CEFR, ratios: [0.20, 0.20, 0.20, 0.20, 0.20] },
+  C:      { levels: ALL_CEFR, ratios: [0.20, 0.20, 0.20, 0.20, 0.20] },
+  MASTER: { levels: ALL_CEFR, ratios: [0.20, 0.20, 0.20, 0.20, 0.20] },
 };
 
 const VALID_LANGUAGES = ['ENGLISH', 'SPANISH'];

@@ -163,7 +163,7 @@ export class LegendService {
       const currentShields = freshProfile?.shields ?? profile.shields;
 
       if (currentShields > 0) {
-        // Kalkan var → kırıl
+        // Can var → kırıl
         await this.prisma.legendProfile.update({
           where: { userId_language: { userId, language } },
           data:  { shields: { decrement: 1 } },
@@ -187,14 +187,21 @@ export class LegendService {
       }
     }
 
+    // Güncel can sayısını hesapla
+    const updatedProfile = await this.prisma.legendProfile.findUnique({
+      where: { userId_language: { userId, language } },
+    });
+    const shieldsRemaining = updatedProfile?.shields ?? 0;
+
     return {
-      ppEarned:     earnedPP,
+      ppEarned:         earnedPP,
       ppLost,
-      seasonPP:     newSeasonPP,
-      rank:         newRank,
+      seasonPP:         newSeasonPP,
+      rank:             newRank,
       shieldDrained,
+      shieldsRemaining,
       demoted,
-      dailyCapHit:  remaining === 0,
+      dailyCapHit:      remaining === 0,
       dailyRunIndex,
     };
   }

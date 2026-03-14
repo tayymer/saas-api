@@ -162,13 +162,23 @@ export class LegendService {
       const currentShields = freshProfile?.shields ?? profile.shields;
 
       if (currentShields > 0) {
-        await this.prisma.legendProfile.update({
-          where: { userId_language: { userId, language } },
-          data:  { shields: { decrement: 1 } },
-        });
-        shieldDrained = true;
+        const newShields = currentShields - 1;
+        // Son canı da harcadı → demoted, canları sıfırla (3'e)
+        if (newShields === 0) {
+          await this.prisma.legendProfile.update({
+            where: { userId_language: { userId, language } },
+            data:  { shields: 3 },
+          });
+          shieldDrained = true;
+          demoted       = true;
+        } else {
+          await this.prisma.legendProfile.update({
+            where: { userId_language: { userId, language } },
+            data:  { shields: newShields },
+          });
+          shieldDrained = true;
+        }
       }
-      // Can 0 ise hiçbir şey yapmıyoruz (demotion yok)
     }
 
     // Güncel can sayısını hesapla

@@ -42,40 +42,19 @@ async function main() {
     const jsonPath = path.resolve(process.cwd(), 'prisma', 'wordData', 'words.json');
     const words = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
     console.log(`${words.length} kelime import ediliyor...`);
-    let created = 0;
-    let updated = 0;
-    const BATCH = 100;
+    const BATCH = 500;
     for (let i = 0; i < words.length; i += BATCH) {
         const batch = words.slice(i, i + BATCH);
-        await Promise.all(batch.map(async (w) => {
-            const existing = await prisma.word.findUnique({
-                where: { language_word: { language: w.language, word: w.word } }
-            });
-            if (existing) {
-                await prisma.word.update({
-                    where: { language_word: { language: w.language, word: w.word } },
-                    data: {
-                        translation: w.translation,
-                        cefrLevel: w.cefrLevel,
-                        tier: w.tier,
-                        category: w.category,
-                        frequencyRank: w.frequencyRank,
-                        isActive: w.isActive,
-                    }
-                });
-                updated++;
-            }
-            else {
-                await prisma.word.create({ data: w });
-                created++;
-            }
-        }));
+        await prisma.word.createMany({
+            data: batch,
+            skipDuplicates: true,
+        });
         if ((i + BATCH) % 1000 === 0 || i + BATCH >= words.length) {
             console.log(`  ${Math.min(i + BATCH, words.length)} / ${words.length}`);
         }
     }
-    console.log(`\n✓ ${created} yeni kelime eklendi, ${updated} kelime güncellendi`);
-    console.log(`✓ Toplam: ${words.length} kelime`);
+    const total = await prisma.word.count();
+    console.log(`\n✓ Seed tamamlandı — DB'de toplam ${total} kelime`);
 }
 main()
     .catch(console.error)

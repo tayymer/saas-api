@@ -12,7 +12,7 @@ export const TIER_CONFIG = {
   C: {
     lives: 3,
     steps: 5,
-    xpThresholds: [500, 530, 560, 600, 650],
+    xpThresholds: [80, 90, 100, 110, 120], // TEST — production: [500, 530, 560, 600, 650]
   },
   MASTER: {
     lives: 1,

@@ -150,41 +150,25 @@ export class LegendService {
       });
     }
 
-    // Shield / PP ceza mantığı — kötü seri (streak < 5)
+    // Can mantığı — kötü seri (streak < 5) can kırar
     let shieldDrained = false;
     let ppLost        = 0;
     let demoted       = false;
 
     if (streak < 5) {
-      // Refresh edilmiş güncel shield sayısını al
       const freshProfile = await this.prisma.legendProfile.findUnique({
         where: { userId_language: { userId, language } },
       });
       const currentShields = freshProfile?.shields ?? profile.shields;
 
       if (currentShields > 0) {
-        // Can var → kırıl
         await this.prisma.legendProfile.update({
           where: { userId_language: { userId, language } },
           data:  { shields: { decrement: 1 } },
         });
         shieldDrained = true;
-      } else if (season) {
-        // Kalkan yok → PP cezası (200 PP düşer, minimum 0)
-        ppLost = 200;
-        const entry  = await this.prisma.legendSeasonEntry.findUnique({
-          where: { userId_seasonId: { userId, seasonId: season.id } },
-        });
-        const penalizedPP = Math.max(0, (entry?.seasonPP ?? 0) - ppLost);
-        const penalizedRank = getRankForPP(penalizedPP);
-        await this.prisma.legendSeasonEntry.update({
-          where: { userId_seasonId: { userId, seasonId: season.id } },
-          data:  { seasonPP: penalizedPP, rank: penalizedRank },
-        });
-        newSeasonPP = penalizedPP;
-        newRank     = penalizedRank;
-        demoted     = true;
       }
+      // Can 0 ise hiçbir şey yapmıyoruz (demotion yok)
     }
 
     // Güncel can sayısını hesapla

@@ -17,7 +17,7 @@ interface WordEntry {
 }
 
 async function main() {
-  const jsonPath = path.join(__dirname, 'wordData', 'words.json')
+  const jsonPath = path.resolve(process.cwd(), 'prisma', 'wordData', 'words.json')
   const words: WordEntry[] = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'))
 
   console.log(`${words.length} kelime import ediliyor...`)

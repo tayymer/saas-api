@@ -70,7 +70,7 @@ export class LegendService {
     });
     if (!profile) {
       profile = await this.prisma.legendProfile.create({
-        data: { userId, language },
+        data: { userId, language, shields: 3 },
       });
     }
     // Refresh shields (1 per 24h, max 3)
@@ -96,7 +96,7 @@ export class LegendService {
       where: { userId_language: { userId, language } },
     });
     if (!profile) {
-      profile = await this.prisma.legendProfile.create({ data: { userId, language } });
+      profile = await this.prisma.legendProfile.create({ data: { userId, language, shields: 3 } });
     }
 
     // Count today's runs for diminishing returns
@@ -159,9 +159,19 @@ export class LegendService {
       const freshProfile = await this.prisma.legendProfile.findUnique({
         where: { userId_language: { userId, language } },
       });
-      const currentShields = freshProfile?.shields ?? profile.shields;
+      // null veya 0 ise 3'e resetle (migration default'u uygulanmamış olabilir)
+      const rawShields = freshProfile?.shields ?? profile.shields;
+      const currentShields = (rawShields === null || rawShields === undefined) ? 3 : rawShields;
 
-      if (currentShields > 0) {
+      if (currentShields <= 0) {
+        // Stuck state: shields 0'da kalmış — demote et, resetle
+        await this.prisma.legendProfile.update({
+          where: { userId_language: { userId, language } },
+          data:  { shields: 3 },
+        });
+        shieldDrained = true;
+        demoted       = true;
+      } else {
         const newShields = currentShields - 1;
         if (newShields === 0) {
           // Son can → demote, canları sıfırla

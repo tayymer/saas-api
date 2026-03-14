@@ -6,9 +6,10 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { WordsModule } from './words/words.module';
 import { ProgressModule } from './progress/progress.module';
+import { LegendModule } from './legend/legend.module';
 
 @Module({
-  imports: [UsersModule, AuthModule, PrismaModule, WordsModule, ProgressModule],
+  imports: [UsersModule, AuthModule, PrismaModule, WordsModule, ProgressModule, LegendModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -9,14 +9,16 @@ datasource db {
 }
 
 model User {
-  id           Int            @id @default(autoincrement())
-  name         String
-  email        String         @unique
-  password     String
-  role         Role           @default(USER)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  progress     UserProgress[]
+  id              Int                 @id @default(autoincrement())
+  name            String
+  email           String              @unique
+  password        String
+  role            Role                @default(USER)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  progress        UserProgress[]
+  legendProfiles  LegendProfile[]
+  legendEntries   LegendSeasonEntry[]
 }
 
 enum Role {
@@ -91,4 +93,76 @@ model UserProgress {
   updatedAt  DateTime @updatedAt
 
   @@unique([userId, language])
+}
+
+// ─── Legend League ────────────────────────────────────────────────────────────
+
+enum LegendRank {
+  LEGEND_V
+  LEGEND_IV
+  LEGEND_III
+  LEGEND_II
+  LEGEND_I
+  WORD_MASTER
+}
+
+model LegendProfile {
+  id               Int        @id @default(autoincrement())
+  userId           Int
+  language         Language
+  rank             LegendRank @default(LEGEND_V)
+  shields          Int        @default(3)
+  lifetimePrestige Int        @default(0)
+  bestStreak       Int        @default(0)
+  totalRuns        Int        @default(0)
+  lastShieldAt     DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  user             User        @relation(fields: [userId], references: [id])
+  runs             LegendRun[]
+
+  @@unique([userId, language])
+}
+
+model LegendSeason {
+  id        Int      @id @default(autoincrement())
+  number    Int
+  language  Language
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(true)
+
+  entries   LegendSeasonEntry[]
+
+  @@unique([number, language])
+}
+
+model LegendSeasonEntry {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  seasonId     Int
+  language     Language
+  seasonPP     Int        @default(0)
+  rank         LegendRank @default(LEGEND_V)
+  finalRank    Int?
+  isWordMaster Boolean    @default(false)
+
+  user         User         @relation(fields: [userId], references: [id])
+  season       LegendSeason @relation(fields: [seasonId], references: [id])
+
+  @@unique([userId, seasonId])
+}
+
+model LegendRun {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  language      Language
+  streak        Int      @default(0)
+  ppEarned      Int      @default(0)
+  usedContinue  Boolean  @default(false)
+  dailyRunIndex Int      @default(1)
+  playedAt      DateTime @default(now())
+
+  profile       LegendProfile @relation(fields: [userId, language], references: [userId, language])
 }

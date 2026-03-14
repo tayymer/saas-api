@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Language, LegendRank } from '@prisma/client';
+import { Language, LegendRank, Tier } from '@prisma/client';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -188,6 +188,15 @@ export class LegendService {
           });
           shieldDrained = true;
         }
+      }
+
+      // Demote olunca UserProgress tier'ını C seviye 1'e (display) düşür
+      // step=5 → display level = 6-5 = 1 (Altın 1)
+      if (demoted) {
+        await this.prisma.userProgress.updateMany({
+          where: { userId, language },
+          data:  { tier: Tier.C, step: 5, xp: 0 },
+        });
       }
     }
 

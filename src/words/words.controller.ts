@@ -23,11 +23,12 @@ export class WordsController {
   // Session pool: pre-select 60 words for a game session
   @Get('session')
   getSessionPool(
-    @Query('userId', ParseIntPipe) userId: number,
+    @Query('userId') userIdStr?: string,
     @Query('language') language: string = 'ENGLISH',
     @Query('tier') tier: string = 'A',
     @Query('recentIds') recentIds?: string,
   ) {
+    const userId = userIdStr ? parseInt(userIdStr, 10) : null;
     const clientRecentIds = recentIds
       ? recentIds.split(',').map(Number).filter(Boolean)
       : [];

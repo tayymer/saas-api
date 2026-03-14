@@ -34,19 +34,21 @@ export class WordsService {
 
   // ── Session pool: CEFR-weighted per tier, ORDER BY RANDOM() ──────────────
   async getSessionPool(
-    userId: number,
+    userId: number | null,
     language: string,
     tier: string,
     clientRecentIds: number[] = [],
   ) {
     const config = TIER_CEFR_CONFIG[tier] ?? TIER_CEFR_CONFIG['A'];
 
-    const dbRecent = await this.prisma.wordSeen.findMany({
-      where: { userId },
-      select: { wordId: true },
-      orderBy: { seenAt: 'desc' },
-      take: COOLDOWN_COUNT,
-    });
+    const dbRecent = userId
+      ? await this.prisma.wordSeen.findMany({
+          where: { userId },
+          select: { wordId: true },
+          orderBy: { seenAt: 'desc' },
+          take: COOLDOWN_COUNT,
+        })
+      : [];
     const excludeIds = [
       ...new Set([...clientRecentIds, ...dbRecent.map((w) => w.wordId)]),
     ];

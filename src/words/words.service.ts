@@ -2,13 +2,12 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
-// All tiers see all CEFR levels equally
-const ALL_CEFR = ['A1', 'A2', 'B1', 'B2', 'C1'];
+// Tier → CEFR mapping: harder words as you advance
 const TIER_CEFR_CONFIG: Record<string, { levels: string[]; ratios: number[] }> = {
-  A:      { levels: ALL_CEFR, ratios: [0.20, 0.20, 0.20, 0.20, 0.20] },
-  B:      { levels: ALL_CEFR, ratios: [0.20, 0.20, 0.20, 0.20, 0.20] },
-  C:      { levels: ALL_CEFR, ratios: [0.20, 0.20, 0.20, 0.20, 0.20] },
-  MASTER: { levels: ALL_CEFR, ratios: [0.20, 0.20, 0.20, 0.20, 0.20] },
+  A:      { levels: ['A1', 'A2'],     ratios: [0.70, 0.30] },
+  B:      { levels: ['A2', 'B1'],     ratios: [0.50, 0.50] },
+  C:      { levels: ['B1', 'B2'],     ratios: [0.40, 0.60] },
+  MASTER: { levels: ['B2', 'C1'],     ratios: [0.40, 0.60] },
 };
 
 const VALID_LANGUAGES = ['ENGLISH', 'SPANISH'];
@@ -33,14 +32,15 @@ export class WordsService {
     });
   }
 
-  // ── Session pool: pre-select POOL_SIZE words with true randomness ─────────
+  // ── Session pool: CEFR-weighted per tier, ORDER BY RANDOM() ──────────────
   async getSessionPool(
     userId: number,
     language: string,
     tier: string,
     clientRecentIds: number[] = [],
   ) {
-    // Get recent word IDs from DB (last N seen by this user)
+    const config = TIER_CEFR_CONFIG[tier] ?? TIER_CEFR_CONFIG['A'];
+
     const dbRecent = await this.prisma.wordSeen.findMany({
       where: { userId },
       select: { wordId: true },
@@ -56,21 +56,29 @@ export class WordsService {
         ? Prisma.sql`AND id NOT IN (${Prisma.join(excludeIds)})`
         : Prisma.sql``;
 
-    const pool = await this.prisma.$queryRaw<any[]>`
-      SELECT id, word, translation, category, "cefrLevel", "frequencyRank"
-      FROM "Word"
-      WHERE language = ${language}::"Language"
-        AND "isActive" = true
-        ${excludeClause}
-      ORDER BY RANDOM()
-      LIMIT ${POOL_SIZE}
-    `;
+    const pool: any[] = [];
+
+    for (let i = 0; i < config.levels.length; i++) {
+      const count = Math.round(POOL_SIZE * config.ratios[i]);
+      const level = config.levels[i];
+      const words = await this.prisma.$queryRaw<any[]>`
+        SELECT id, word, translation, category, "cefrLevel", "frequencyRank"
+        FROM "Word"
+        WHERE language = ${language}::"Language"
+          AND "cefrLevel" = ${level}
+          AND "isActive" = true
+          ${excludeClause}
+        ORDER BY RANDOM()
+        LIMIT ${count}
+      `;
+      pool.push(...words);
+    }
 
     if (pool.length < 10) {
       return this.getSessionPoolFallback(language);
     }
 
-    return pool;
+    return pool.sort(() => Math.random() - 0.5);
   }
 
   private async getSessionPoolFallback(language: string) {

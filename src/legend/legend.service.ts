@@ -150,21 +150,50 @@ export class LegendService {
       });
     }
 
-    // Shield drain if bad run (< 5 correct = shield kırılır)
+    // Shield / PP ceza mantığı — kötü seri (streak < 5)
     let shieldDrained = false;
-    if (streak < 5 && profile.shields > 0) {
-      await this.prisma.legendProfile.update({
+    let ppLost        = 0;
+    let demoted       = false;
+
+    if (streak < 5) {
+      // Refresh edilmiş güncel shield sayısını al
+      const freshProfile = await this.prisma.legendProfile.findUnique({
         where: { userId_language: { userId, language } },
-        data:  { shields: { decrement: 1 } },
       });
-      shieldDrained = true;
+      const currentShields = freshProfile?.shields ?? profile.shields;
+
+      if (currentShields > 0) {
+        // Kalkan var → kırıl
+        await this.prisma.legendProfile.update({
+          where: { userId_language: { userId, language } },
+          data:  { shields: { decrement: 1 } },
+        });
+        shieldDrained = true;
+      } else if (season) {
+        // Kalkan yok → PP cezası (200 PP düşer, minimum 0)
+        ppLost = 200;
+        const entry  = await this.prisma.legendSeasonEntry.findUnique({
+          where: { userId_seasonId: { userId, seasonId: season.id } },
+        });
+        const penalizedPP = Math.max(0, (entry?.seasonPP ?? 0) - ppLost);
+        const penalizedRank = getRankForPP(penalizedPP);
+        await this.prisma.legendSeasonEntry.update({
+          where: { userId_seasonId: { userId, seasonId: season.id } },
+          data:  { seasonPP: penalizedPP, rank: penalizedRank },
+        });
+        newSeasonPP = penalizedPP;
+        newRank     = penalizedRank;
+        demoted     = true;
+      }
     }
 
     return {
       ppEarned:     earnedPP,
+      ppLost,
       seasonPP:     newSeasonPP,
       rank:         newRank,
       shieldDrained,
+      demoted,
       dailyCapHit:  remaining === 0,
       dailyRunIndex,
     };

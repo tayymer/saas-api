@@ -165,11 +165,16 @@ export class LegendService {
 
       // Demote olunca UserProgress tier'ını C seviye 1'e (display) düşür
       // step=5 → display level = 6-5 = 1 (Altın 1)
-      if (demoted) {
+      // LEGEND_IV+ oyuncuları korumalı — Efsane liginden düşürülmez
+      const PROTECTED_RANKS: LegendRank[] = ['LEGEND_IV', 'LEGEND_III', 'LEGEND_II', 'LEGEND_I', 'WORD_MASTER'];
+      if (demoted && !PROTECTED_RANKS.includes(newRank)) {
         await this.prisma.userProgress.updateMany({
           where: { userId, language },
           data:  { tier: Tier.C, step: 5, xp: 0 },
         });
+      } else if (demoted && PROTECTED_RANKS.includes(newRank)) {
+        // Korumalı rank: canları sıfırla ama tier düşürme
+        demoted = false;
       }
     }
 

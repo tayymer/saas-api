@@ -154,6 +154,15 @@ export class ProgressService {
     return { success: true, progress: updated, deducted: cost };
   }
 
+  async addStars(userId: number, language: Language = 'ENGLISH', amount: number) {
+    const progress = await this.getOrCreateProgress(userId, language);
+    const updated = await this.prisma.userProgress.update({
+      where: { userId_language: { userId, language } },
+      data: { totalXp: progress.totalXp + amount },
+    });
+    return { totalXp: updated.totalXp };
+  }
+
   async resetProgress(userId: number, language: Language = 'ENGLISH') {
     return this.prisma.userProgress.upsert({
       where: { userId_language: { userId, language } },

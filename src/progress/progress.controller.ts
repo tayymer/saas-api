@@ -38,6 +38,11 @@ export class ProgressController {
     );
   }
 
+  @Post('add-stars')
+  addStars(@Request() req: any, @Body() body: { amount: number; language?: Language }) {
+    return this.progressService.addStars(req.user.userId, body.language || 'ENGLISH', body.amount);
+  }
+
   @Delete('reset')
   async resetProgress(@Request() req: any, @Query('language') language?: Language) {
     return this.progressService.resetProgress(req.user.userId, language || 'ENGLISH');

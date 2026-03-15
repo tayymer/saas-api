@@ -19,33 +19,10 @@ const RANK_ORDER: LegendRank[] = [
   'LEGEND_V', 'LEGEND_IV', 'LEGEND_III', 'LEGEND_II', 'LEGEND_I', 'WORD_MASTER',
 ];
 
-// Diminishing returns: runs 1-5 → 100%, 6-10 → 70%, 11-20 → 40%, 21+ → 10%
-function getDiminishingMultiplier(runIndex: number): number {
-  if (runIndex <= 5)  return 1.0;
-  if (runIndex <= 10) return 0.7;
-  if (runIndex <= 20) return 0.4;
-  return 0.1;
-}
-
-// Daily boost: run 1 → 1.5x, run 2 → 1.3x, run 3 → 1.1x, run 4+ → 1.0x
-function getDailyBoostMultiplier(runIndex: number): number {
-  if (runIndex === 1) return 1.5;
-  if (runIndex === 2) return 1.3;
-  if (runIndex === 3) return 1.1;
-  return 1.0;
-}
-
-// PP formula: base 5 per correct + milestone bonuses
+// PP formula: spec-compliant — 1 PP per 5 correct answers
+// Frontend ile birebir eşleşmeli: Math.floor(streak / 5)
 function calculateStreakPP(streak: number): number {
-  if (streak < 5) return 0;
-  const base = streak * 5;
-  let bonus = 0;
-  if (streak >= 5)  bonus += 15;
-  if (streak >= 10) bonus += 35;
-  if (streak >= 20) bonus += 75;
-  if (streak >= 30) bonus += 150;
-  if (streak >= 50) bonus += 300;
-  return base + bonus;
+  return Math.floor(streak / 5);
 }
 
 function getRankForPP(pp: number): LegendRank {
@@ -107,12 +84,8 @@ export class LegendService {
     });
     const dailyRunIndex = todayRuns + 1;
 
-    // Calculate PP
-    const rawPP   = calculateStreakPP(streak);
-    const dimMult = getDiminishingMultiplier(dailyRunIndex);
-    const boostMult = getDailyBoostMultiplier(dailyRunIndex);
-    const combinedMult = dailyRunIndex <= 3 ? boostMult : dimMult;
-    let earnedPP  = Math.round(rawPP * combinedMult);
+    // Calculate PP: 1 PP per 5 correct (spec-compliant)
+    let earnedPP = calculateStreakPP(streak);
 
     // Apply daily cap
     const todayPP = await this.getTodayPP(userId, language);

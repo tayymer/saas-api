@@ -8,10 +8,10 @@ const DAILY_PP_CAP = 400;
 
 const RANK_PP_THRESHOLDS: Record<LegendRank, number> = {
   LEGEND_V:    0,
-  LEGEND_IV:   800,
-  LEGEND_III:  1800,
-  LEGEND_II:   3200,
-  LEGEND_I:    4600,
+  LEGEND_IV:   10,    // TEST — production: 800
+  LEGEND_III:  20,    // TEST — production: 1800
+  LEGEND_II:   35,    // TEST — production: 3200
+  LEGEND_I:    50,    // TEST — production: 4600
   WORD_MASTER: 99999, // PP ile kazanılmaz, top10 ile
 };
 

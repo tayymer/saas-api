@@ -19,10 +19,14 @@ const RANK_ORDER: LegendRank[] = [
   'LEGEND_V', 'LEGEND_IV', 'LEGEND_III', 'LEGEND_II', 'LEGEND_I', 'WORD_MASTER',
 ];
 
-// PP formula: spec-compliant — 1 PP per 5 correct answers
-// Frontend ile birebir eşleşmeli: Math.floor(streak / 5)
+// PP formula: milestone-based — 5→+1, 10→+2, 15→+3, 20→+4, …
+// Her 5'lik milestone bir öncekinden 1 fazla PP verir.
 function calculateStreakPP(streak: number): number {
-  return Math.floor(streak / 5);
+  let total = 0;
+  for (let milestone = 5; milestone <= streak; milestone += 5) {
+    total += milestone / 5;
+  }
+  return total;
 }
 
 function getRankForPP(pp: number): LegendRank {
